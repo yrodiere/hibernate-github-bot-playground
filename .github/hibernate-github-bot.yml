@@ -1,3 +1,10 @@
 ---
 jira:
   projectKey: "HSEARCH"
+  ignore-files:
+    - .github
+    - ci
+    - build/config
+    - Jenkinsfile
+    - */Jenkinsfile
+    - *.Jenkinsfile
