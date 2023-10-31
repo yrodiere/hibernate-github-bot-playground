@@ -1,7 +1,7 @@
 ---
 jira:
   projectKey: "HSEARCH"
-  ignore-files:
+  ignoreFiles:
     - ".github"
     - "ci"
     - "build/config"
