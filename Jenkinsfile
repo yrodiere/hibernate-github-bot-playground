@@ -1,3 +1,4 @@
+
 def withMavenWorkspace(Closure body) {
 	withMaven(jdk: 'OpenJDK 17 Latest', maven: 'Apache Maven 3.9',
 			mavenLocalRepo: env.WORKSPACE_TMP + '/.m2repository',
