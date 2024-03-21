@@ -8,3 +8,6 @@ jira:
     - "Jenkinsfile"
     - "*/Jenkinsfile"
     - "*.Jenkinsfile"
+develocity:
+  buildScan:
+    addCheck: true
