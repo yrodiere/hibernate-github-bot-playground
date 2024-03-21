@@ -1,0 +1,72 @@
+name: GitHub Actions Build
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.repository != 'hibernate/hibernate-github-bot-playground' }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  MAVEN_ARGS: "-e -B --fail-at-end"
+
+jobs:
+  build:
+    name: ${{matrix.os.name}}
+    runs-on: ${{ matrix.os.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - {
+            name: "Linux JDK 17",
+            runs-on: 'ubuntu-latest',
+            java: {
+              version: 17
+            }
+          }
+          # We can't start Linux containers on GitHub Actions' Windows VMs,
+          # so we can't run Elasticsearch tests.
+          # See https://github.com/actions/runner-images/issues/1143#issuecomment-972929995
+          - {
+            name: "Windows JDK 17",
+            runs-on: 'windows-latest',
+            java: {
+              version: 17
+            }
+          }
+    steps:
+      - name: Support longpaths on Windows
+        if: "startsWith(matrix.os.runs-on, 'windows')"
+        run: git config --global core.longpaths true
+      - uses: actions/checkout@v4
+        with:
+          # Fetch the whole history to make sure that gitflow incremental builder
+          # can find the base commit.
+          fetch-depth: 0
+      - name: Set up Java ${{ matrix.os.java.version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.os.java.version }}
+          distribution: temurin
+      - name: Set up Maven
+        run: ./mvnw -v
+      - name: Building code and running unit tests and basic checks
+        run: |
+          ./mvnw $MAVEN_ARGS ${{ matrix.os.maven.args }} clean install \
+          -Pjqassistant -Pdist -Pci-build -DskipITs
+        env:
+          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+      - name: Running integration tests in the default environment
+        run: |
+          ./mvnw $MAVEN_ARGS ${{ matrix.os.maven.args }} clean verify \
+          -Pskip-checks \
+          ${{ github.event.pull_request.base.ref && format('-Dincremental -Dgib.referenceBranch=refs/remotes/origin/{0}', github.event.pull_request.base.ref) || '' }}
+        env:
+          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}

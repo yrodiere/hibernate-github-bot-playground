@@ -37,3 +37,6 @@ nb-configuration.xml
 
 # Local environment
 .env
+
+# Gradle Enterprise/Develocity
+/.mvn/.gradle-enterprise
